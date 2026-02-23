@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 
 const DISTRICTS = [
     'Pune', 'Nashik', 'Mumbai', 'Nagpur',
@@ -6,6 +7,8 @@ const DISTRICTS = [
 ];
 
 export default function InputPanel({ values, onChange, onRun, loading }) {
+    const [activeSlider, setActiveSlider] = useState(null);
+
     const sliders = [
         { key: 'rainfall_dev', label: 'Rainfall Deviation', unit: 'mm', min: -60, max: 80, step: 1 },
         { key: 'temperature', label: 'Temperature', unit: '°C', min: 18, max: 42, step: 0.5 },
@@ -82,7 +85,7 @@ export default function InputPanel({ values, onChange, onRun, loading }) {
 
             {/* ── Sliders ── */}
             {sliders.map((s) => (
-                <div key={s.key} style={{ marginBottom: '20px' }}>
+                <div key={s.key} style={{ marginBottom: '20px', position: 'relative' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <label
                             style={{
@@ -90,7 +93,8 @@ export default function InputPanel({ values, onChange, onRun, loading }) {
                                 textTransform: 'uppercase',
                                 fontWeight: 600,
                                 letterSpacing: '1.5px',
-                                color: 'var(--text-muted)',
+                                color: activeSlider === s.key ? 'var(--accent)' : 'var(--text-muted)',
+                                transition: 'color 0.2s ease'
                             }}
                         >
                             {s.label}
@@ -99,10 +103,43 @@ export default function InputPanel({ values, onChange, onRun, loading }) {
                             {values[s.key]}{s.unit}
                         </span>
                     </div>
+
+                    {/* Bubble on active/drag */}
+                    <AnimatePresence>
+                        {activeSlider === s.key && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                                animate={{ opacity: 1, y: -24, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                                style={{
+                                    position: 'absolute',
+                                    left: `${((values[s.key] - s.min) / (s.max - s.min)) * 100}%`,
+                                    transform: 'translateX(-50%)',
+                                    top: '10px',
+                                    background: 'var(--accent)',
+                                    color: '#000',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    pointerEvents: 'none',
+                                    zIndex: 10,
+                                }}
+                            >
+                                {values[s.key]}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <input
                         type="range"
                         min={s.min} max={s.max} step={s.step}
                         value={values[s.key]}
+                        onMouseDown={() => setActiveSlider(s.key)}
+                        onMouseUp={() => setActiveSlider(null)}
+                        onTouchStart={() => setActiveSlider(s.key)}
+                        onTouchEnd={() => setActiveSlider(null)}
                         onChange={(e) => onChange({ ...values, [s.key]: parseFloat(e.target.value) })}
                     />
                 </div>
@@ -126,10 +163,10 @@ export default function InputPanel({ values, onChange, onRun, loading }) {
                     letterSpacing: '1.2px',
                     cursor: loading ? 'not-allowed' : 'pointer',
                     opacity: loading ? 0.4 : 1,
-                    background: 'linear-gradient(135deg, #00E6F2, #00C8D8)',
+                    background: 'linear-gradient(90deg, #00E0B8, #00B8FF)',
                     color: '#050B14',
                     border: 'none',
-                    boxShadow: '0 8px 25px rgba(0,230,242,0.28)',
+                    boxShadow: '0 8px 25px rgba(0,224,184,0.28)',
                     marginBottom: '16px',
                 }}
             >

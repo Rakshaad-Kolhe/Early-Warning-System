@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 class PredictionInput(BaseModel):
@@ -52,6 +52,9 @@ class PredictionOutput(BaseModel):
     top_contributors: List[Dict[str, Any]]
     response: Dict[str, Any]
     timestamp: str
+    uncertainty: Optional[float] = None
+    drift_status: Optional[str] = None
+    recommended_resources: Optional[Dict[str, Any]] = None
 
 
 class AlertRecord(BaseModel):

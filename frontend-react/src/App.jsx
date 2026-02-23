@@ -9,6 +9,10 @@ import ResponseProtocol from './components/ResponseProtocol';
 import DistrictSnapshot from './components/DistrictSnapshot';
 import AlertHistory from './components/AlertHistory';
 import RiskTrend from './components/RiskTrend';
+import ScenarioPanel from './components/ScenarioPanel';
+import ResourcePanel from './components/ResourcePanel';
+import KpiPanel from './components/KpiPanel';
+import ArchitectureModal from './components/ArchitectureModal';
 
 const DISTRICTS = [
     'Pune', 'Nashik', 'Mumbai', 'Nagpur',
@@ -37,6 +41,12 @@ export default function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareData, setCompareData] = useState(null);
+
+    const [predictionCount, setPredictionCount] = useState(0);
+    const [modalOpen, setModalOpen] = useState(false);
+
     useEffect(() => {
         fetchAlerts().then(setAlerts).catch(() => { });
     }, []);
@@ -58,6 +68,7 @@ export default function App() {
                 ...prev,
                 [data.district]: { score: data.calibrated_score, category: data.category },
             }));
+            setPredictionCount((c) => c + 1);
             const freshAlerts = await fetchAlerts();
             setAlerts(freshAlerts);
         } catch (err) {
@@ -76,9 +87,52 @@ export default function App() {
     return (
         <div className="min-h-screen flex flex-col px-6 py-4" style={{ maxWidth: '1600px', margin: '0 auto' }}>
 
+            {/* ── Top Header ── */}
+            <div style={{ marginBottom: '24px', paddingLeft: '4px' }}>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                    District Surveillance Intelligence Layer
+                </h1>
+                <div style={{ fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600, marginTop: '4px' }}>
+                    Climate-Aware Epidemiological Intelligence System
+                </div>
+            </div>
+
             {/* ── Status Strip ── */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <StatusBar />
+                <div style={{ display: 'flex', gap: '16px' }}>
+                    <button
+                        onClick={() => setModalOpen(true)}
+                        style={{
+                            padding: '8px 16px',
+                            background: 'transparent',
+                            color: 'var(--text-primary)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        System Architecture
+                    </button>
+                    <button
+                        onClick={() => setCompareMode(!compareMode)}
+                        style={{
+                            padding: '8px 16px',
+                            background: compareMode ? 'rgba(0, 224, 184, 0.1)' : 'var(--accent)',
+                            color: compareMode ? 'var(--accent)' : '#000',
+                            border: compareMode ? '1px solid var(--accent)' : '1px solid transparent',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: compareMode ? 'none' : '0 4px 14px rgba(0, 224, 184, 0.3)'
+                        }}
+                    >
+                        {compareMode ? 'Disable Scenario Comparison' : 'Enable Scenario Comparison'}
+                    </button>
+                </div>
             </div>
 
             {/* ── Error Banner ── */}
@@ -123,7 +177,7 @@ export default function App() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
 
                     {/* ── TOP ROW: Hero with ambient bloom + Trend ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: '40px' }}>
                         {/* Ambient bloom behind hero card only */}
                         <div style={{ position: 'relative' }}>
                             <div style={{
@@ -138,11 +192,14 @@ export default function App() {
                                 <RiskHero result={result} />
                             </div>
                         </div>
-                        <RiskTrend alerts={alerts} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+                            <KpiPanel count={predictionCount} result={result} />
+                            <RiskTrend alerts={alerts} />
+                        </div>
                     </div>
 
                     {/* ── BOTTOM ROW: 3 Equal Cards ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
                         {/* Card 1 — Contributing Factors */}
                         {result ? (
                             <ContributingFactors contributors={result.top_contributors} />
@@ -163,6 +220,15 @@ export default function App() {
                 </div>
             </div>
 
+            <ResourcePanel resources={result?.recommended_resources} />
+
+            {compareMode && (
+                <ScenarioPanel
+                    baseInputs={inputs}
+                    baseResult={result}
+                />
+            )}
+
             {/* ── FULL WIDTH: Alert History ── */}
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
@@ -172,6 +238,8 @@ export default function App() {
             >
                 <AlertHistory alerts={alerts} />
             </motion.div>
+
+            <ArchitectureModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </div>
     );
 }

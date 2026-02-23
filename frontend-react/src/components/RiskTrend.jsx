@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-    LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+    LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area
 } from 'recharts';
 
 // Primary: desaturated cyan; Secondary: electric blue
@@ -22,8 +22,9 @@ export default function RiskTrend({ alerts }) {
 
     const districts = [...new Set(alerts.map((a) => a.district))];
     const sorted = [...alerts].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const sliced = sorted.slice(-30);
 
-    const chartData = sorted.map((a) => ({
+    const chartData = sliced.map((a) => ({
         time: new Date(a.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         [a.district]: a.score,
     }));
@@ -57,9 +58,15 @@ export default function RiskTrend({ alerts }) {
             </div>
 
             {/* Glow on primary line wrapper */}
-            <div style={{ filter: 'drop-shadow(0 0 4px rgba(0,230,242,0.45))' }}>
+            <div style={{ filter: 'drop-shadow(0 0 4px rgba(0,224,184,0.3))' }}>
                 <ResponsiveContainer width="100%" height={340}>
-                    <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                    <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                        <defs>
+                            <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={COLORS[0]} stopOpacity={0.15} />
+                                <stop offset="95%" stopColor={COLORS[0]} stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
                         {/* Grid at 0.04 — subconscious */}
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -71,6 +78,7 @@ export default function RiskTrend({ alerts }) {
                             tick={{ fill: 'rgba(234,246,255,0.28)', fontSize: 9 }}
                             axisLine={{ stroke: 'rgba(255,255,255,0.03)' }}
                             tickLine={false}
+                            padding={{ left: 20, right: 20 }}
                         />
                         <YAxis
                             domain={[0, 100]}
@@ -81,7 +89,7 @@ export default function RiskTrend({ alerts }) {
                         <Tooltip
                             contentStyle={{
                                 background: 'rgba(5, 11, 20, 0.97)',
-                                border: '1px solid rgba(0,230,242,0.10)',
+                                border: '1px solid rgba(0,224,184,0.10)',
                                 borderRadius: 10,
                                 fontSize: 11,
                                 color: '#EAF6FF',
@@ -89,22 +97,37 @@ export default function RiskTrend({ alerts }) {
                             }}
                             cursor={{ stroke: 'rgba(255,255,255,0.04)', strokeWidth: 1 }}
                         />
-                        {districts.map((d, i) => (
+                        {districts.map((d, i) => i === 0 ? (
+                            <Area
+                                key={d}
+                                type="monotone"
+                                dataKey={d}
+                                stroke={COLORS[0]}
+                                strokeWidth={2.5}
+                                fillOpacity={1}
+                                fill="url(#colorPrimary)"
+                                activeDot={{ r: 4.5, strokeWidth: 0, fill: COLORS[0] }}
+                                dot={false}
+                                connectNulls
+                                animationDuration={1200}
+                                animationEasing="ease-out"
+                            />
+                        ) : (
                             <Line
                                 key={d}
-                                type="monotoneX"
+                                type="monotone"
                                 dataKey={d}
                                 stroke={COLORS[i % COLORS.length]}
-                                strokeWidth={i === 0 ? 2.5 : 1.5}
-                                strokeOpacity={i === 0 ? 1 : 0.8}
-                                dot={{ r: i === 0 ? 3 : 2.2, fill: COLORS[i % COLORS.length], strokeWidth: 0 }}
-                                activeDot={{ r: i === 0 ? 4.5 : 3.5, strokeWidth: 0 }}
+                                strokeWidth={1.5}
+                                strokeOpacity={0.3}
+                                activeDot={{ r: 3.5, strokeWidth: 0, fill: COLORS[i % COLORS.length] }}
+                                dot={false}
                                 connectNulls
                                 animationDuration={1200}
                                 animationEasing="ease-out"
                             />
                         ))}
-                    </LineChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
         </motion.div>

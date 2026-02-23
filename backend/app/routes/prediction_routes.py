@@ -7,6 +7,9 @@ from app.services.threshold_service import calibrate
 from app.services.explain_service import explain
 from app.services.response_service import generate_response
 from app.alert_logger import log_alert, get_alerts
+from app.uncertainty_engine import compute_uncertainty
+from app.drift_monitor import check_drift
+from app.resource_engine import recommend_resources
 
 router = APIRouter()
 
@@ -26,6 +29,10 @@ def predict(input_data: PredictionInput):
 
     calibrated = calibrate(score, input_data.district)
 
+    uncertainty = compute_uncertainty(input_data)
+    drift = check_drift(input_data)
+    resources = recommend_resources(calibrated)
+
     contributors = explain(features)
 
     response = generate_response(category)
@@ -43,6 +50,9 @@ def predict(input_data: PredictionInput):
         top_contributors=contributors,
         response=response,
         timestamp=timestamp,
+        uncertainty=uncertainty,
+        drift_status=drift.get("drift_status", "stable"),
+        recommended_resources=resources,
     )
 
 
