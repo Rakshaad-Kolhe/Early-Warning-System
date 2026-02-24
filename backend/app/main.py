@@ -32,3 +32,4 @@ app.add_middleware(
 
 from app.routes.prediction_routes import router
 app.include_router(router)
+# Triggering uvicorn reload
