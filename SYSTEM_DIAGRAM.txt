@@ -1,0 +1,516 @@
+================================================================================
+SYSTEM ARCHITECTURE DIAGRAM
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER BROWSER                                      │
+│                      http://localhost:3000                                  │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      REACT FRONTEND (Vite)                                  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      PredictionPage.jsx                             │   │
+│  │                                                                     │   │
+│  │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐        │   │
+│  │  │ Input Panel  │───►│ Run Button   │───►│ Results      │        │   │
+│  │  └──────────────┘    └──────────────┘    └──────────────┘        │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────────────────────────────────────────┐     │   │
+│  │  │         Backend Toggle                                   │     │   │
+│  │  │  [ ] Use Backend API  ✓ Available / ❌ Not Running      │     │   │
+│  │  └──────────────────────────────────────────────────────────┘     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌──────────────────────┐              ┌──────────────────────┐            │
+│  │  Hardcoded Mode      │              │  Backend Mode        │            │
+│  │  ─────────────       │              │  ────────────        │            │
+│  │                      │              │                      │            │
+│  │  predictOutbreak()   │              │  fetchPrediction()   │            │
+│  │  ↓                   │              │  ↓                   │            │
+│  │  hardcodedPredictor  │              │  API Client          │            │
+│  │  .js                 │              │  (client.js)         │            │
+│  │  ↓                   │              │  ↓                   │            │
+│  │  Rule-based calc     │              │  /api/predict        │            │
+│  │  ↓                   │              │  ↓                   │            │
+│  │  Results (800ms)     │              │  Vite Proxy          │            │
+│  │                      │              │  ↓                   │            │
+│  └──────────────────────┘              └──────────┬───────────┘            │
+│                                                    │                        │
+└────────────────────────────────────────────────────┼────────────────────────┘
+                                                     │
+                                                     │ HTTP Request
+                                                     │ /api → :8000
+                                                     │
+                                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      FASTAPI BACKEND                                        │
+│                   http://localhost:8000                                     │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      main.py (FastAPI App)                          │   │
+│  │                                                                     │   │
+│  │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐        │   │
+│  │  │ CORS         │    │ Lifespan     │    │ Routes       │        │   │
+│  │  │ Middleware   │    │ (Startup)    │    │ Included     │        │   │
+│  │  └──────────────┘    └──────────────┘    └──────────────┘        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                   prediction_routes.py                              │   │
+│  │                                                                     │   │
+│  │  POST /predict ──────────────────────────────────────────┐         │   │
+│  │  GET  /health  ──────────────────────────────────────┐   │         │   │
+│  │  GET  /alerts  ──────────────────────────────────┐   │   │         │   │
+│  └──────────────────────────────────────────────────┼───┼───┼─────────┘   │
+│                                                      │   │   │             │
+│  ┌───────────────────────────────────────────────────┼───┼───┼─────────┐   │
+│  │                    SERVICES LAYER                 │   │   │         │   │
+│  │                                                   │   │   │         │   │
+│  │  ┌──────────────────────────────────────────┐    │   │   │         │   │
+│  │  │  model_service.py                        │◄───┘   │   │         │   │
+│  │  │  ─────────────────                       │        │   │         │   │
+│  │  │  • load_model()                          │        │   │         │   │
+│  │  │  • predict_probability()                 │        │   │         │   │
+│  │  │  • Real-time amplifiers                  │        │   │         │   │
+│  │  └────────────────┬─────────────────────────┘        │   │         │   │
+│  │                   │                                   │   │         │   │
+│  │                   ▼                                   │   │         │   │
+│  │  ┌──────────────────────────────────────────┐        │   │         │   │
+│  │  │  outbreak_model.pkl (1004 KB)            │        │   │         │   │
+│  │  │  ─────────────────────────               │        │   │         │   │
+│  │  │  RandomForest Classifier                 │        │   │         │   │
+│  │  │  Trained on historical data              │        │   │         │   │
+│  │  └──────────────────────────────────────────┘        │   │         │   │
+│  │                                                       │   │         │   │
+│  │  ┌──────────────────────────────────────────┐        │   │         │   │
+│  │  │  risk_service.py                         │◄───────┘   │         │   │
+│  │  │  ────────────────                        │            │         │   │
+│  │  │  • classify()                            │            │         │   │
+│  │  │  • Risk thresholds (LOW/MEDIUM/HIGH)     │            │         │   │
+│  │  └──────────────────────────────────────────┘            │         │   │
+│  │                                                           │         │   │
+│  │  ┌──────────────────────────────────────────┐            │         │   │
+│  │  │  threshold_service.py                    │            │         │   │
+│  │  │  ────────────────────                    │            │         │   │
+│  │  │  • calibrate()                           │            │         │   │
+│  │  │  • District-specific adjustments         │            │         │   │
+│  │  └──────────────────────────────────────────┘            │         │   │
+│  │                                                           │         │   │
+│  │  ┌──────────────────────────────────────────┐            │         │   │
+│  │  │  explain_service.py                      │            │         │   │
+│  │  │  ──────────────────                      │            │         │   │
+│  │  │  • explain()                             │            │         │   │
+│  │  │  • SHAP values                           │            │         │   │
+│  │  │  • Feature importance                    │            │         │   │
+│  │  └──────────────────────────────────────────┘            │         │   │
+│  │                                                           │         │   │
+│  │  ┌──────────────────────────────────────────┐            │         │   │
+│  │  │  response_service.py                     │            │         │   │
+│  │  │  ───────────────────                     │            │         │   │
+│  │  │  • generate_response()                   │            │         │   │
+│  │  │  • Recommendations                       │            │         │   │
+│  │  └──────────────────────────────────────────┘            │         │   │
+│  │                                                           │         │   │
+│  │  ┌──────────────────────────────────────────┐            │         │   │
+│  │  │  alert_logger.py                         │◄───────────┘         │   │
+│  │  │  ───────────────                         │                      │   │
+│  │  │  • log_alert()                           │                      │   │
+│  │  │  • get_alerts()                          │                      │   │
+│  │  └────────────────┬─────────────────────────┘                      │   │
+│  │                   │                                                 │   │
+│  │                   ▼                                                 │   │
+│  │  ┌──────────────────────────────────────────┐                      │   │
+│  │  │  alerts.db (SQLite)                      │                      │   │
+│  │  │  ──────────────────                      │                      │   │
+│  │  │  Audit trail / History                   │                      │   │
+│  │  └──────────────────────────────────────────┘                      │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────────────────────────┐                      │   │
+│  │  │  uncertainty_engine.py                   │                      │   │
+│  │  │  ─────────────────────                   │                      │   │
+│  │  │  • compute_uncertainty()                 │                      │   │
+│  │  └──────────────────────────────────────────┘                      │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────────────────────────┐                      │   │
+│  │  │  drift_monitor.py                        │                      │   │
+│  │  │  ────────────────                        │                      │   │
+│  │  │  • check_drift()                         │                      │   │
+│  │  └──────────────────────────────────────────┘                      │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────────────────────────┐                      │   │
+│  │  │  resource_engine.py                      │                      │   │
+│  │  │  ──────────────────                      │                      │   │
+│  │  │  • recommend_resources()                 │                      │   │
+│  │  └──────────────────────────────────────────┘                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                      schemas.py (Pydantic)                          │   │
+│  │                                                                     │   │
+│  │  • PredictionInput  (validation)                                   │   │
+│  │  • PredictionOutput (response format)                              │   │
+│  │  • AlertRecord      (database model)                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+DATA FLOW - HARDCODED MODE
+================================================================================
+
+User Input
+    ↓
+InputPanel Component
+    ↓
+handleRun() function
+    ↓
+predictOutbreak(inputs)
+    ↓
+hardcodedPredictor.js
+    ↓
+Rule-based calculation:
+  • Base risk from district
+  • Rainfall impact
+  • Temperature impact
+  • Case growth impact
+  • Baseline impact
+    ↓
+Calculate score (0-100)
+    ↓
+Classify risk (LOW/MEDIUM/HIGH)
+    ↓
+Generate contributors
+    ↓
+Generate response
+    ↓
+Generate resources
+    ↓
+Return JSON result
+    ↓
+setResult(data)
+    ↓
+UI Components render:
+  • RiskHero
+  • DecisionTriggerPanel
+  • ConfidencePanel
+  • ForecastTimeline
+  • ResourceImpactPanel
+  • GovernancePanel
+  • ContributingFactors
+  • ResponseProtocol
+  • AuditTrailPanel
+
+Time: ~800ms (simulated delay)
+
+================================================================================
+DATA FLOW - BACKEND MODE
+================================================================================
+
+User Input
+    ↓
+InputPanel Component
+    ↓
+handleRun() function
+    ↓
+fetchPrediction(inputs)
+    ↓
+API Client (client.js)
+    ↓
+POST /api/predict
+    ↓
+Vite Proxy
+    ↓
+Backend: POST /predict
+    ↓
+prediction_routes.py
+    ↓
+┌─────────────────────────────────────┐
+│ Parallel Processing:                │
+│                                     │
+│ 1. Model Service                    │
+│    • Load features                  │
+│    • Run ML model                   │
+│    • Apply amplifiers               │
+│    • Return probability             │
+│                                     │
+│ 2. Risk Service                     │
+│    • Classify probability           │
+│    • Determine category             │
+│    • Calculate confidence           │
+│                                     │
+│ 3. Threshold Service                │
+│    • Apply district calibration     │
+│    • Adjust score                   │
+│                                     │
+│ 4. Explain Service (SHAP)           │
+│    • Calculate feature importance   │
+│    • Generate SHAP values           │
+│    • Rank contributors              │
+│                                     │
+│ 5. Uncertainty Engine               │
+│    • Compute uncertainty            │
+│    • Calculate intervals            │
+│                                     │
+│ 6. Drift Monitor                    │
+│    • Check distribution             │
+│    • Detect anomalies               │
+│                                     │
+│ 7. Resource Engine                  │
+│    • Project needs                  │
+│    • Calculate capacity             │
+│                                     │
+│ 8. Response Service                 │
+│    • Generate recommendations       │
+│    • Determine actions              │
+│                                     │
+│ 9. Alert Logger                     │
+│    • Log to database                │
+│    • Create audit trail             │
+└─────────────────────────────────────┘
+    ↓
+Combine all results
+    ↓
+PredictionOutput (Pydantic)
+    ↓
+JSON Response
+    ↓
+API Client receives
+    ↓
+Transform to frontend format
+    ↓
+setResult(data)
+    ↓
+UI Components render
+
+Time: 200-500ms
+
+================================================================================
+AUTOMATIC FALLBACK
+================================================================================
+
+User clicks "Run Prediction"
+    ↓
+Check: useBackend && backendAvailable?
+    ↓
+    ├─ YES → Try backend API
+    │         ↓
+    │         Success? → Display results
+    │         ↓
+    │         Fail? → Catch error
+    │                  ↓
+    │                  Try hardcoded predictor
+    │                  ↓
+    │                  Display results with warning
+    │
+    └─ NO → Use hardcoded predictor
+            ↓
+            Display results
+
+Result: System always works, even if backend fails
+
+================================================================================
+COMPONENT HIERARCHY
+================================================================================
+
+App.jsx (Main Dashboard)
+│
+├─ AppWithRouting.jsx (Router)
+│  │
+│  ├─ Route: / → App.jsx (National Overview)
+│  │  │
+│  │  ├─ IndiaMap
+│  │  ├─ StateList
+│  │  ├─ CityCards
+│  │  ├─ TrajectoryChart
+│  │  └─ NewsFeed
+│  │
+│  └─ Route: /prediction → PredictionPage.jsx
+│     │
+│     ├─ InputPanel
+│     │  ├─ District Selector
+│     │  ├─ Rainfall Slider
+│     │  ├─ Temperature Slider
+│     │  ├─ Case Growth Slider
+│     │  ├─ Baseline Slider
+│     │  └─ Run Button
+│     │
+│     ├─ RiskHero
+│     │  ├─ Score Display
+│     │  ├─ Category Badge
+│     │  └─ Confidence Meter
+│     │
+│     ├─ DecisionTriggerPanel
+│     │  ├─ Threshold Ladder
+│     │  ├─ Current Position
+│     │  └─ Action Requirements
+│     │
+│     ├─ ConfidencePanel
+│     │  ├─ Confidence Score
+│     │  ├─ Uncertainty Range
+│     │  └─ Drift Status
+│     │
+│     ├─ ForecastTimeline
+│     │  ├─ Timeline Graph
+│     │  ├─ Baseline Line
+│     │  ├─ Intervention Line
+│     │  └─ Hover Tooltips
+│     │
+│     ├─ ResourceImpactPanel
+│     │  ├─ Beds Projection
+│     │  ├─ ICU Projection
+│     │  ├─ Ventilators Projection
+│     │  └─ Teams Projection
+│     │
+│     ├─ GovernancePanel
+│     │  ├─ Administrative Actions
+│     │  ├─ Public Messaging
+│     │  └─ Escalation Protocols
+│     │
+│     ├─ ContributingFactors
+│     │  ├─ Feature Bars
+│     │  ├─ Impact Values
+│     │  └─ SHAP Explanations
+│     │
+│     ├─ ResponseProtocol
+│     │  ├─ Recommended Actions
+│     │  ├─ Timeline
+│     │  └─ Resources Needed
+│     │
+│     └─ AuditTrailPanel
+│        ├─ Run History
+│        ├─ Timestamps
+│        └─ Export Button
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+Early-Warning-System/
+│
+├─ backend/
+│  ├─ app/
+│  │  ├─ models/
+│  │  │  └─ outbreak_model.pkl          (ML Model - 1004 KB)
+│  │  ├─ routes/
+│  │  │  ├─ __init__.py
+│  │  │  └─ prediction_routes.py        (API Endpoints)
+│  │  ├─ services/
+│  │  │  ├─ __init__.py
+│  │  │  ├─ model_service.py            (ML Predictions)
+│  │  │  ├─ risk_service.py             (Risk Classification)
+│  │  │  ├─ threshold_service.py        (Calibration)
+│  │  │  ├─ explain_service.py          (SHAP)
+│  │  │  └─ response_service.py         (Recommendations)
+│  │  ├─ database/
+│  │  │  └─ alerts.db                   (SQLite)
+│  │  ├─ main.py                        (FastAPI App)
+│  │  ├─ config.py                      (Configuration)
+│  │  ├─ schemas.py                     (Pydantic Models)
+│  │  ├─ database.py                    (DB Setup)
+│  │  ├─ alert_logger.py                (Logging)
+│  │  ├─ uncertainty_engine.py          (Uncertainty)
+│  │  ├─ drift_monitor.py               (Drift Detection)
+│  │  ├─ resource_engine.py             (Resources)
+│  │  └─ __init__.py
+│  ├─ requirements.txt                  (Dependencies)
+│  ├─ train_model.py                    (Model Training)
+│  └─ Dockerfile
+│
+├─ frontend-react/
+│  ├─ src/
+│  │  ├─ api/
+│  │  │  └─ client.js                   (API Client)
+│  │  ├─ utils/
+│  │  │  ├─ hardcodedPredictor.js       (Standalone Mode)
+│  │  │  └─ testPredictor.js            (Tests)
+│  │  ├─ pages/
+│  │  │  ├─ PredictionPage.jsx          (Main Prediction UI)
+│  │  │  └─ PredictionPageWithBackend.jsx (Enhanced Version)
+│  │  ├─ components/
+│  │  │  ├─ InputPanel.jsx
+│  │  │  ├─ RiskHero.jsx
+│  │  │  ├─ DecisionTriggerPanel.jsx
+│  │  │  ├─ ConfidencePanel.jsx
+│  │  │  ├─ ForecastTimeline.jsx
+│  │  │  ├─ ResourceImpactPanel.jsx
+│  │  │  ├─ GovernancePanel.jsx
+│  │  │  ├─ ContributingFactors.jsx
+│  │  │  ├─ ResponseProtocol.jsx
+│  │  │  └─ AuditTrailPanel.jsx
+│  │  ├─ App.jsx                        (National Overview)
+│  │  ├─ AppWithRouting.jsx             (Router)
+│  │  ├─ main.jsx                       (Entry Point)
+│  │  └─ index.css                      (Styles)
+│  ├─ public/
+│  │  └─ india.geojson                  (Map Data)
+│  ├─ package.json
+│  ├─ vite.config.js                    (Vite Config + Proxy)
+│  └─ Dockerfile
+│
+├─ DOCS/
+│  ├─ QUICKSTART.md
+│  ├─ SYSTEM_ARCHITECTURE.md
+│  ├─ HARDCODED_SYSTEM.md
+│  ├─ PREDICTION_FEATURES.md
+│  ├─ DEMO_GUIDE.md
+│  └─ ... (more docs)
+│
+├─ test_integration.py                  (Integration Tests)
+├─ setup_backend.bat                    (Setup Script)
+├─ start_system.bat                     (Start Script)
+├─ SETUP_VERIFICATION.md                (Setup Guide)
+├─ INTEGRATION_GUIDE.md                 (Integration Docs)
+├─ BACKEND_FRONTEND_STATUS.md           (Status Report)
+├─ VERIFICATION_CHECKLIST.md            (Checklist)
+├─ INTEGRATION_SUMMARY.txt              (Summary)
+├─ SYSTEM_DIAGRAM.txt                   (This File)
+├─ docker-compose.yml                   (Docker Config)
+└─ README.md                            (Main README)
+
+================================================================================
+NETWORK FLOW
+================================================================================
+
+Development:
+------------
+Browser → localhost:3000 (Vite Dev Server)
+                ↓
+        /api/* requests
+                ↓
+        Vite Proxy (vite.config.js)
+                ↓
+        localhost:8000 (FastAPI Backend)
+
+Production:
+-----------
+Browser → nginx/apache (Static Files)
+                ↓
+        /api/* requests
+                ↓
+        Reverse Proxy
+                ↓
+        Backend Server (Gunicorn + Uvicorn)
+
+Docker:
+-------
+Browser → localhost:3000 (Frontend Container)
+                ↓
+        /api/* requests
+                ↓
+        Docker Network
+                ↓
+        localhost:8000 (Backend Container)
+
+================================================================================
+PORTS
+================================================================================
+
+Frontend:  3000  (Vite Dev Server)
+Backend:   8000  (Uvicorn/FastAPI)
+Database:  N/A   (SQLite - file-based)
+
+================================================================================
+END OF DIAGRAM
+================================================================================
