@@ -17,8 +17,8 @@ RESPONSE_PROTOCOLS = {
         "actions": [
             "Activate district health cell",
             "Increase surveillance frequency to daily",
-            "Pre-position medical supplies",
-            "Notify regional health authority",
+            "Pre-position IV Fluids and Medical supplies",
+            "Initiate targeted mosquito control drive",
             "Begin community awareness campaigns",
         ],
         "resources": {
@@ -33,8 +33,8 @@ RESPONSE_PROTOCOLS = {
             "Activate emergency operations center",
             "Deploy rapid response teams immediately",
             "Establish isolation facilities",
-            "Initiate contact tracing protocols",
-            "Request state-level resource support",
+            "Initiate aggressive mosquito control drive",
+            "Resource prioritization for critical medical supplies",
             "Issue public health advisory",
             "Begin mass screening in affected zones",
         ],
