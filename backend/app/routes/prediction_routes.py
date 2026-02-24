@@ -1,34 +1,34 @@
-from fastapi import APIRouter
-from datetime import datetime, timezone
-from app.schemas import PredictionInput, PredictionOutput
-from app.services.model_service import predict_probability
-from app.services.risk_service import classify
-from app.services.threshold_service import calibrate
-from app.services.explain_service import explain
-from app.services.response_service import generate_response
-from app.alert_logger import log_alert, get_alerts
-from app.uncertainty_engine import compute_uncertainty
-from app.drift_monitor import check_drift
-from app.resource_engine import recommend_resources
+"""
+API routes for ML prediction functionality
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Dict, List, Optional
+import logging
+import json
+from datetime import datetime
 
-router = APIRouter()
+from ..database import get_db
+from ..pretrained_model import OutbreakPredictor
+from ..models.outbreak_model import PredictionHistory
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/predictions", tags=["predictions"])
+
+# Global model instance
+try:
+    predictor = OutbreakPredictor(model_path='backend/app/models/outbreak_model.pkl')
+except:
+    logger.warning("Could not load pretrained model, initializing new model")
+    predictor = OutbreakPredictor()
 
 
-@router.post("/predict", response_model=PredictionOutput)
-def predict(input_data: PredictionInput):
-    features = {
-        "rainfall_dev": input_data.rainfall_dev,
-        "temperature": input_data.temperature,
-        "case_growth": input_data.case_growth,
-        "baseline": input_data.baseline,
-    }
-
-    prob = predict_probability(features)
-
-    score, category, confidence = classify(prob)
-
-    calibrated = calibrate(score, input_data.district)
-
+class DistrictPredictionRequest(BaseModel):
+    district: str
+    population_density: float
+    temperature
     uncertainty = compute_uncertainty(input_data)
     drift = check_drift(input_data)
     resources = recommend_resources(calibrated)
