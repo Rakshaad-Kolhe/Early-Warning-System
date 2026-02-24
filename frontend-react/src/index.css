@@ -316,6 +316,10 @@ button {
   min-height: 250px;
 }
 
+.map-panel-wide {
+  grid-column: span 2;
+}
+
 .heatmap {
   margin-top: 14px;
   display: flex;
