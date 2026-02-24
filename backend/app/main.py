@@ -30,6 +30,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routes.prediction_routes import router
-app.include_router(router)
+from app.routes.prediction_routes import router as prediction_router
+from app.routes.scraper_routes import router as scraper_router
+from app.routes.prediction_routes import router as ml_prediction_router
+
+app.include_router(prediction_router)
+app.include_router(scraper_router)
+app.include_router(ml_prediction_router)
+
+@app.get("/")
+async def root():
+    return {
+        "message": "District Early Warning System API",
+        "version": "1.0.0",
+        "endpoints": {
+            "predictions": "/api/predict",
+            "scraper": "/api/scraper",
+            "ml_predictions": "/api/predictions"
+        }
+    }
+
 # Triggering uvicorn reload
