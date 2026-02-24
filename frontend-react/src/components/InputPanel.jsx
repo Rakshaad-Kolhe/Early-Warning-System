@@ -1,10 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-
-const DISTRICTS = [
-    'Pune', 'Nashik', 'Mumbai', 'Nagpur',
-    'Aurangabad', 'Thane', 'Solapur', 'Kolhapur',
-];
+import { DISTRICT_LIST } from '../utils/hardcodedPredictor';
 
 export default function InputPanel({ values, onChange, onRun, loading }) {
     const [activeSlider, setActiveSlider] = useState(null);
@@ -77,7 +73,7 @@ export default function InputPanel({ values, onChange, onRun, loading }) {
                         WebkitAppearance: 'none',
                     }}
                 >
-                    {DISTRICTS.map((d) => (
+                    {DISTRICT_LIST.map((d) => (
                         <option key={d} value={d} style={{ background: '#0a1a28' }}>{d}</option>
                     ))}
                 </select>

@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 const GRAD_POS = 'linear-gradient(90deg, #00E6F2, #4C7EFF)';
 const GRAD_NEG = 'linear-gradient(90deg, #FF4D6D, #FF7A7A)';
 
-export default function ContributingFactors({ contributors }) {
-    if (!contributors || contributors.length === 0) return null;
+export default function ContributingFactors({ result }) {
+    if (!result || !result.top_contributors) return null;
 
+    const contributors = result.top_contributors;
     const data = contributors.map((c) => ({
-        name: c.feature.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        name: c.feature,
         value: c.contribution,
     }));
 
@@ -39,7 +40,7 @@ export default function ContributingFactors({ contributors }) {
                                     {item.name}
                                 </span>
                                 <span style={{ fontSize: '0.58rem', color: valColor, fontWeight: 600 }}>
-                                    {item.value > 0 ? '+' : ''}{item.value.toFixed(3)}
+                                    {item.value > 0 ? '+' : ''}{item.value}
                                 </span>
                             </div>
 

@@ -7,13 +7,19 @@
   --panel: #121722;
   --panel-soft: #171c28;
   --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #e8edf7;
+  --text-primary: #e8edf7;
+  --text-secondary: rgba(232, 237, 247, 0.85);
   --text-dim: rgba(232, 237, 247, 0.64);
   --text-muted: rgba(232, 237, 247, 0.4);
   --aqua: #25d7ff;
+  --accent: #00E0B8;
   --pink: #ff5aa5;
   --gold: #f3c455;
+  --amber: #f5b942;
+  --amber-dim: rgba(245, 185, 66, 0.1);
   --danger: #ff4d6d;
 }
 
@@ -596,4 +602,86 @@ input[type="range"]::-webkit-slider-thumb {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+
+/* Glass Card Styles */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Hero Card Styles */
+.hero-card {
+  background: linear-gradient(145deg, rgba(7, 26, 36, 0.95), rgba(10, 26, 40, 0.9));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Section Label */
+.section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* Utility Classes */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+/* Animations */
+@keyframes hero-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* Drift Warning Badge */
+.drift-warning {
+  animation: badge-pulse 1.5s ease-in-out;
+}
+
+/* Uncertainty Display */
+.uncertainty {
+  font-family: 'IBM Plex Mono', monospace;
 }
